@@ -1,0 +1,36 @@
+[project]
+name = "icloud-calendar-mcp"
+version = "0.1.0"
+description = "MCP server for reading and publishing iCloud Calendar events over CalDAV"
+readme = "README.md"
+authors = [
+    { name = "Bernard van Niekerk", email = "bernard.vanniekerk@icloud.com" }
+]
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = [
+    "anyio>=4.0",
+    "caldav>=3.0,<4",
+    "icalendar>=6.1",
+    "mcp>=2.0,<3",
+    "python-dateutil>=2.9",
+]
+
+[project.urls]
+Repository = "https://github.com/frizzy/icloud-calendar-mcp"
+
+[project.scripts]
+icloud-calendar-mcp = "icloud_calendar_mcp.server:main"
+
+[build-system]
+requires = ["uv_build>=0.9.26,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
