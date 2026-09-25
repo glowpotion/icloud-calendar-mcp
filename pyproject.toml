@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "MCP server for reading and publishing iCloud Calendar events over CalDAV"
 readme = "README.md"
 authors = [
-    { name = "Bernard van Niekerk", email = "bernard.vanniekerk@icloud.com" }
+    { name = "Bernard van Niekerk", email = "bernard.van.niekerk@icloud.com" }
 ]
 requires-python = ">=3.12"
 license = "MIT"
