@@ -1,0 +1,25 @@
+# HTTP mode, for an always-on server. Credentials and MCP_AUTH_TOKEN come from
+# .env (see .env.example):   docker compose up -d
+services:
+  icloud-calendar-mcp:
+    image: ghcr.io/frizzy/icloud-calendar-mcp:latest
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MCP_TRANSPORT: http
+      # Inside the container; the published port below decides who can reach it.
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: 8765
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:?set MCP_AUTH_TOKEN in .env (openssl rand -hex 32)}
+    ports:
+      # This machine only. Use "8765:8765" to open it to your network.
+      - "127.0.0.1:8765:8765"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/healthz')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

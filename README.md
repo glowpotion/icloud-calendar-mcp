@@ -105,6 +105,121 @@ Or, as raw config for any host that takes the standard `mcpServers` shape:
 }
 ```
 
+### Hermes Agent
+
+[Hermes Agent](https://hermes-agent.nousresearch.com) reads MCP servers from
+`mcp_servers` in `~/.hermes/config.yaml`. It gives a stdio server only the
+environment variables listed under its `env`, so the credentials have to be
+listed there. Keep the values themselves in `~/.hermes/.env`:
+
+```bash
+# ~/.hermes/.env
+ICLOUD_USERNAME=you@icloud.com
+ICLOUD_APP_PASSWORD=abcd-efgh-ijkl-mnop
+```
+
+Then add **one** of these to `~/.hermes/config.yaml`.
+
+From a local checkout (if Hermes can't find `uv`, use the full path that
+`command -v uv` prints):
+
+```yaml
+mcp_servers:
+  icloud_calendar:
+    command: "uv"
+    args: ["--directory", "/path/to/icloud-calendar-mcp", "run", "icloud-calendar-mcp"]
+    env:
+      ICLOUD_USERNAME: "${ICLOUD_USERNAME}"
+      ICLOUD_APP_PASSWORD: "${ICLOUD_APP_PASSWORD}"
+      CALDAV_DEFAULT_TIMEZONE: "Europe/London"
+```
+
+With [Docker](#running-with-docker), and nothing to install:
+
+```yaml
+mcp_servers:
+  icloud_calendar:
+    command: "docker"
+    args: ["run", "-i", "--rm",
+           "-e", "ICLOUD_USERNAME", "-e", "ICLOUD_APP_PASSWORD", "-e", "CALDAV_DEFAULT_TIMEZONE",
+           "ghcr.io/frizzy/icloud-calendar-mcp:latest"]
+    env:
+      ICLOUD_USERNAME: "${ICLOUD_USERNAME}"
+      ICLOUD_APP_PASSWORD: "${ICLOUD_APP_PASSWORD}"
+      CALDAV_DEFAULT_TIMEZONE: "Europe/London"
+```
+
+Over HTTP, to an always-on server (the [Pi service](#running-on-a-raspberry-pi)
+or [Docker Compose](#always-on-over-http)), with
+`ICLOUD_CALENDAR_MCP_TOKEN=<token>` added to `~/.hermes/.env`:
+
+```yaml
+mcp_servers:
+  icloud_calendar:
+    url: "http://127.0.0.1:8765/mcp"
+    headers:
+      Authorization: "Bearer ${ICLOUD_CALENDAR_MCP_TOKEN}"
+```
+
+Check the connection with `hermes mcp test icloud_calendar`; it should list
+six tools. Then run `/reload-mcp` in an open chat, or start a new one. The
+tools show up as `mcp__icloud_calendar__list_events` and so on.
+
+To give the agent read access only, add a filter to the server entry:
+
+```yaml
+    tools:
+      include: [list_calendars, list_events, get_event]
+```
+
+## Running with Docker
+
+A multi-arch image (amd64 and arm64, so a Raspberry Pi works too) is published
+as `ghcr.io/frizzy/icloud-calendar-mcp`. To build it yourself instead, run
+`docker build -t icloud-calendar-mcp .` in a checkout and use that name in the
+commands below.
+
+Check your credentials first, using a `.env` file filled in from
+[`.env.example`](.env.example):
+
+```bash
+docker run --rm --env-file .env ghcr.io/frizzy/icloud-calendar-mcp --check
+```
+
+### As a stdio server
+
+The agent starts a fresh container for each session and talks to it over
+stdin/stdout, so `-i` is required. A bare `-e NAME` forwards that variable from
+the agent's own environment, which keeps the password out of the command line.
+For Claude Code:
+
+```bash
+claude mcp add icloud-calendar \
+  --env ICLOUD_USERNAME=you@icloud.com \
+  --env ICLOUD_APP_PASSWORD=abcd-efgh-ijkl-mnop \
+  --env CALDAV_DEFAULT_TIMEZONE=Europe/London \
+  -- docker run -i --rm -e ICLOUD_USERNAME -e ICLOUD_APP_PASSWORD \
+     -e CALDAV_DEFAULT_TIMEZONE ghcr.io/frizzy/icloud-calendar-mcp
+```
+
+### Always on, over HTTP
+
+[`docker-compose.yml`](docker-compose.yml) runs the streamable-HTTP server with
+a restart policy, a health check and a read-only filesystem:
+
+```bash
+cp .env.example .env                                  # fill in your credentials
+echo "MCP_AUTH_TOKEN=$(openssl rand -hex 32)" >> .env
+docker compose up -d
+```
+
+It listens on `http://127.0.0.1:8765/mcp` on this machine only. Connect with the
+header `Authorization: Bearer <MCP_AUTH_TOKEN>`, just as for the
+[Pi service](#running-on-a-raspberry-pi). To open it to your network, change
+the port mapping to `"8765:8765"`; the security notes for the Pi apply. Use
+`docker compose logs -f` for logs, and
+`docker compose pull && docker compose up -d` to update.
+
 ## Running on a Raspberry Pi
 
 The same server can run as an always-on service on a Pi (or any systemd Linux
@@ -321,6 +436,8 @@ src/icloud_calendar_mcp/
   recurrence.py       RRULE validation and occurrence matching
   config.py           Environment configuration
   timeutil.py         ISO 8601 parsing and normalisation
+Dockerfile            Container image (stdio by default)
+docker-compose.yml    Always-on HTTP server in Docker
 deploy/
   deploy.sh           Copy to a Pi over SSH and install/update there
   install.sh          Install or update the systemd service (runs on the Pi)
