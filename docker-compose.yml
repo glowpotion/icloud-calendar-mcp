@@ -2,7 +2,7 @@
 # .env (see .env.example):   docker compose up -d
 services:
   icloud-calendar-mcp:
-    image: ghcr.io/frizzy/icloud-calendar-mcp:latest
+    image: ghcr.io/glowpotion/icloud-calendar-mcp:latest
     build: .
     restart: unless-stopped
     env_file: .env

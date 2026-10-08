@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/frizzy/icloud-calendar-mcp"
+Repository = "https://github.com/glowpotion/icloud-calendar-mcp"
 
 [project.scripts]
 icloud-calendar-mcp = "icloud_calendar_mcp.server:main"

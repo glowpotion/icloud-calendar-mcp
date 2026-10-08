@@ -12,7 +12,7 @@ COPY src ./src
 RUN uv sync --frozen --no-dev --no-editable
 
 FROM python:3.12-slim
-LABEL org.opencontainers.image.source="https://github.com/frizzy/icloud-calendar-mcp" \
+LABEL org.opencontainers.image.source="https://github.com/glowpotion/icloud-calendar-mcp" \
       org.opencontainers.image.description="MCP server for reading and publishing iCloud Calendar events over CalDAV" \
       org.opencontainers.image.licenses="MIT"
 RUN useradd --system --uid 10001 --no-create-home mcp
